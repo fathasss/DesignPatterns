@@ -162,7 +162,7 @@ class Program{
 
 **Factory Method**, nesne yaratmayı bağımlılıklardan ayırır ve esnekliği artırır.
 
-### Anstract Factory Pattern
+### Abstract Factory Pattern
 
 Amaç: Birbirleriyle ilişkili nesne ailelerini üretmek ve somut sınıflara bağımlılığı azaltmak.
 
