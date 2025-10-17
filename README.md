@@ -351,3 +351,430 @@ class Program{
 ```
 
 **Prototype**, nesne oluşturmayı kopyalama ile yapar, maliyetli yeni nesne yaratmayı önler.
+
+## Structural Design Patterns
+
+Amaç: Sınıflar ve nesneler arasındaki ilişkileri ve yapıyı düzenlemek, karmaşık sistemleri daha basit ve esnek hale getirmek.
+
+### Adapter Pattern
+
+Amaç: Farklı arayüzleri birbirine uyumlu hale getirmek.
+
+Kullanım senaryosu:
+
+- Eski bir sistemle yeni sistemi bağlamak
+- Farklı API' leri aynı interface ile kullanmak
+
+```csharp
+
+public interface ITarget{
+    void Request();
+}
+
+public class Adaptee{
+    public void SpecificRequest(){
+        Console.WriteLine("Adaptee çalıştı!");
+    }
+}
+
+public class Adapter : ITarget {
+    private readonly Adaptee _adaptee;
+
+    public Adapter(Adaptee adaptee) {
+        _adaptee = adaptee;
+    }
+
+    public void Request(){
+        _adaptee.SpecificRequest();
+    }
+}
+
+class Program {
+    static void Main(){
+        ITarget target = new Adapter(new Adaptee());
+        target.Request(); //Adaptee çalıştı.
+    }
+}
+```
+
+**Adapter**, uyumsuz arayüzleri köprüler.
+
+### Decorator Pattern
+
+Amaç: Nesnelere çalışma zamanında yeni davranış eklemek.
+
+Kullanım senaryosu:
+
+- UI bileşenlerine ekstra özellik eklemek (border,scroll vb.)
+- Nesneye dinamik yetenek eklemek
+
+```csharp
+public abstract class Coffee{
+    public abstract double GetCost();
+    public abstract string GetDescription();
+}
+
+//Concrete Component
+public class SimpleCoffee : Coffee {
+    public override double GetCost() {
+        return 5;
+    }
+
+    public override string GetDescription(){
+        return "Light coffee";
+    }
+}
+
+//Decorator
+public abstract class CoffeeDecorator : Coffee {
+    protected Coffee _coffee;
+    protected CoffeeDecorator(Coffee coffee){
+        _coffee = coffee;
+    }
+}
+
+//Concrete Decorators
+public class MilkDecorator : CoffeeDecorator {
+    public MilkDecorator(Coffee coffee) : base(coffee) { }
+    public override double GetCost(){
+        return _coffee.GetCost();
+    }
+    public override string GetDescription(){
+        return _coffee.GetDescription() + ", Milk";
+    }
+}
+
+public class SugarDecorator : CoffeeDecorator {
+    public SugarDecorator(Coffee coffee) : base(coffee) { }
+    public override double GetCost() => _coffee.GetCost() + 1;
+    public override string GetDescription() => _coffee.GetDescription() + ", Sugar";
+}
+
+class Program{
+    static void Main(){
+        Coffee coffee = new SimpleCoffee();
+        coffee = new MilkDecorator(coffee);
+        coffee = new SugarDecorator(coffee);
+
+        Console.WriteLine($"{coffee.GetDescription()} = {coffee.GetCost()} TL");       
+    }
+}
+
+```
+
+**Decorator** ile nesneye yeni özellikler eklemek için sınıfları değiştirmeye gerek yok.
+
+### Facade Pattern
+
+Amaç: Karmaşık sistemi basit bir arayüz ile sunmak.
+
+Kullanım senaryosu:
+
+- Büyük kütüphane veya API' yi kolay kullanmak
+- Karmaşık iş akışlarını tek bir sınıf üzerinden yönetmek
+
+```csharp
+
+//Subsystem
+public class CPU {
+    public void Start(){
+        Console.WriteLine("CPU started");
+    }
+}
+
+public class Memory{
+    public void Load(){
+        Console.WriteLine("Memory loaded");
+    }
+}
+
+public class Disk{
+    public void Read(){
+        Console.WriteLine("Disk readed");
+    }
+}
+
+//Facade
+public class ComputerFacade{
+    private CPU cpu = new CPU();
+    private Memory memory = new Memory();
+    private Disk disk = new Disk();
+
+    public void Start(){
+        cpu.Start();
+        memory.Load();
+        disk.Read();
+        Console.WriteLine("Computer ready!");
+    }
+}
+
+class Program {
+    static void Main(){
+        ComputerFacade computer = new ComputerFacade();
+        computer.Start();
+    }
+}
+
+```
+
+**Facade**, karmaşık sistemi basit bir arayüz ile kontrol etmemizi sağlar.
+
+### Composite Pattern 
+
+Amaç: Nesneleri ağaç yapısında gruplamak ve tek bir nesne gibi işlem yapmak.
+
+Kullanım senaryosu:
+
+- Dosya ve klasör yapıları
+- UI elementleri (Panel içinde düğmeler, textboxlar vb.)
+
+```csharp
+
+//Component
+public abstract class Graphic {
+    public abstract void Draw();
+}
+
+//Leaf
+public class Dot : Graphic {
+    public override void Draw(){
+        Console.WriteLine("Dot çizildi.");
+    }
+}
+
+//Composite
+public class CompoundGraphic : Graphic {
+    private List<Graphic> _children = new List<Graphic>();
+
+    public void Add(Graphic g){
+        _children.Add(g);
+    }
+
+    public override void Draw(){
+        foreach(var child in _children){
+            child.Draw();
+        }
+    }
+}
+
+class Program {
+    static void Main(){
+        CompoundGraphic picture = new CompoundGraphic();
+        picture.Add(new Dot());
+        picture.Add(new Dot());
+
+        CompoundGraphic group = new CompundGraphic();
+        group.add(new Dot());
+        picture.Add(group);
+
+        picture.Draw();
+    }
+}
+
+```
+
+**Composite**, tekil nesne veya nesne grubunu aynı şekilde kullanmayı sağlar.
+
+### Proxy Pattern
+
+Amaç: Başka bir nesneye erişimi kontrol etmek veya geciktirmek.
+
+Kullanım senaryosu:
+
+- Uzak nesnelere erişim (Remote Proxy)
+- Ağ veya maliyetli nesneleri yükleme (Virtual Proxy)
+- Erişim kontrolü (Protection Proxy)
+
+```csharp
+//Subject
+public interface IImage{
+    void Display();
+}
+
+//Real Subject
+public class RealImage : IImage {
+    private string _filename;
+
+    public RealImage(string filename) {
+        _filename = filename;
+        LoadFromDisk();
+    }
+
+    private void LoadFromDisk(){
+        Console.WriteLine($"{_filename} loading...");
+    }
+
+    public void Display(){
+        Console.WriteLine($"{_filename} showing...");
+    }
+}
+
+//Proxy
+public class ProxyImage : IImage {
+    private RealImage _realimage;
+    private string _filename;
+
+    public ProxyImage(string filename){
+        _filename = filename;
+    }
+
+    public void Display(){
+        if (_realimage is null){
+            _realimage = new RealImage(_filename);
+        }
+        
+        _realimage.Display();
+    }
+}
+
+class Program{
+    static void Main(){
+        IImage image = new ProxyImage("photo.jpg");
+        image.Display(); //loaded and showed
+        image.Display(); //just showed
+    }
+}
+```
+
+**Proxy**, gerçek nesnenin yaratılmasını ve kullanımını kontrol eder.
+
+### Bridge Pattern
+
+Amaç: Abstraction ve implementasyonu ayırmak, bağımlılığı azaltmak.
+
+Kullanım senaryosu:
+
+- Farklı platformlarda çalışacak sistemler.
+- Arayüz ve iş mantığını birbirinden bağımsız geliştirmek.
+
+```csharp
+
+//Implementor
+public interface IRenderer {
+    void RenderCircle(float radius);
+}
+
+//Concrete Implementor
+public class VectorRenderer : IRenderer {
+
+    public void RenderCircle(float radius){
+        Console.WriteLine($"Vector circle with radius {radius}");
+    }
+}
+
+public class RasterRenderer : IRenderer {
+
+    public void RenderCircle(float radius){
+        Console.WriteLine($"Raster circle with radius {radius}");
+    }
+}
+
+//Abstraction
+public abstract class Shape{
+    protected IRenderer renderer;
+    protected Shape(IRenderer renderer){
+        this.renderer = renderer;
+    }
+
+    public abstract void Draw();
+}
+
+//Refined Abstraction
+public class Circle : Shape {
+    private float radius;
+    public Circle(IRenderer renderer, float radius): base(renderer){
+        this.radius = radius;
+    }
+
+    public override void Draw(){
+        renderer.RenderCircle(radius);
+    }
+}
+
+class Program {
+    static void Main(){
+        Shape circle1 = new Circle(new VectorRenderer(),5);
+        circle1.Draw(); // Vector circle with radius 5
+
+        Shape circle2 = new Circle(new RasterRenderer(),7);
+        circle2.Draw(); // Raster circle with radius 7
+    }
+}
+
+```
+
+**Bridge**, abstraction ve implementasyonu bağımsız yaparak sistemi enek kılar.
+
+### Flyweight Pattern
+
+Amaç: Çok sayıda benzer nesneyi hafızada paylaşarak performansı artırmak.
+
+Kullanım senaryosu: 
+
+- Oyunlardaki çok sayıda aynı tip objeler (ağaç, düşman, taş vb.)
+- Grafik objelerinin paylaşımı
+
+```csharp
+
+//Flyweight
+public class TreeType{
+    public string Name { get; }
+    public string Color { get; }
+
+    public TreeType(string name, string color){
+        Name = name;
+        Color = color;
+    }
+
+    public void Display(int x, int y){
+        Console.WriteLine($"Tree {Name} ({Color}) at ({x},{y})")
+    }
+}
+
+//Flyweight Factory
+public class TreeFactory{
+
+    private Dictionary<string,TreeType> _treeTypes = new Dictionary<string,TreeType>();
+
+    public TreeType GetTreeType(string name, string color){
+        string key = $"{name}_{color}";
+        if(!_treeTypes.ContainsKey(key))
+            _treeTypes[key] = new TreeType(name,color);
+        
+        return _treeTypes[key];
+    }
+}
+
+class Program{
+    static void Main(){
+        TreeFactory factory = new TreeFactory();
+
+        TreeType oak1 = factory.GetTreeType("Oak","Green");
+        TreeType oak2 = factory.GetTreeType("Oak","Green");
+        TreeType pine = factory.GetTreeType("Pine","DarkGreen");
+
+        //oak1 ve oak2 aynı instance
+        Console.WriteLine(ReferenceEquals(oak1,oak2)); //true
+        Console.WriteLine(ReferenceEquals(oak1,pine)); //false
+
+        oak1.Display();
+        pine.Display();
+    }
+}
+
+```
+
+**Flyweight** ile benzer nesneleri paylaşarak hafızayı ve performansı optimize edebiliriz.
+
+#### Structural Patterns Özeti
+
+| `Pattern` | `Amaç/ Kısa Açıklama` |
+| --- | --- |
+| Adapter | Farklı arayüzleri uyumlu hale getirir. |
+| Decorator | Nesnelere dinamik olarak özellik ekler. |
+| Facade | Karmaşık sistemi basit bir arayüz ile sunar. |
+| Composite | Nesneleri ağaç yapısında gruplayıp tek nesne gibi kullanmayı sağlar. | 
+| Proxy | Nesneye erişimi kontrol eder ve geciktirir. |
+| Bridge | Abstraction ve implementastonu ayırır, bağımlılığı azaltır. |
+| Flyweight | Çok sayıda benzer nesneyi hafızada paylaşır, performansı artırır. |
+
