@@ -54,7 +54,7 @@ Amaç: Nesneler arasındaki iletişimi ve sorumlulukları düzenlemek.
 
 > Concrete Nedir ?
 
-- **Abstract (soyut)**: Sadece bir iskelet (veya imza) sağğlar, doğrudan kullanılamaz. İçinde bazı methodlar tanımlı ama gövdesi olmayabilir veya alt sınfılar override etmek zorunda olabilir.
+- **Abstract (soyut)**: Sadece bir iskelet (veya imza) sağlar, doğrudan kullanılamaz. İçinde bazı methodlar tanımlı ama gövdesi olmayabilir veya alt sınıfları override etmek zorunda olabilir.
 - **Concreate (somut)**: Soyut sınıf veya interface' i implement eden ve tam olarak işleyen sınıftır. Yani gerçek bir nesne oluşturulabilir.
 
 ---
