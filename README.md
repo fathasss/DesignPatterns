@@ -778,3 +778,204 @@ class Program{
 | Bridge | Abstraction ve implementastonu ayırır, bağımlılığı azaltır. |
 | Flyweight | Çok sayıda benzer nesneyi hafızada paylaşır, performansı artırır. |
 
+## Behavioral Patterns
+
+Amaç: Nesnelerin davranışlarını ve birbirleriyle iletişimini düzenlemek, esnek ve sürdürülebilir sistemler tasarlamaktır.
+
+Behavioral Patterns' ler "nesneler ne yapar ve birbiri ile nasıl iletişim kurar?" sorularını çözmek için kullanılır.
+
+### Observer Pattern
+
+Amaç: Bir nesnedeki değişiklikleri ona bağlı diğer nesnelere otomatik olarak bildirmek.
+
+Kullanım senaryosu:
+
+- Event sistemleri (UI' daki buton tıklamaları)
+- Stock market veya fiyat değişikliklerini takip eden sistemler
+- Chat uygulamalarında mesaj güncellemeleri
+
+> Özet: **Subject (gözlenen)** bir nesnedir. **Observer (gözlemci)** ise değişiklikleri takip eden nesnedir.
+
+```csharp
+
+public interface IInvestor{
+    void Update(Stock stock);
+}
+
+//Concrete Observer
+public class Investor : IInvestor {
+    public string Name { get; }
+
+    public Investor(string name){
+        Name = name;
+    }
+
+    public void Update(Stock stock){
+        Console.WriteLine($"Merhaba {name}, {stock.Symbol} fiyatı değişti: {stock.Price}");
+    }
+}
+
+//Subject
+public class Stock {
+    private List<IInvestor> _investors = new List<IInvestor>();
+    public string Symbol { get; }
+    private double _price;
+
+    public Stock(string symbol, double price){
+        Symbol = symbol;
+        _price = price;
+    }
+
+    public double Price{
+        get{
+            return _price;
+        }
+        set{
+            if(_price != value){
+                _price = value;
+                Notify();
+            }
+        }
+    }
+
+    public void Attach(IInvestor investor) {
+        _investors.Add(investor);
+    }
+
+    public void Detach(IInvestor investor){
+        _investors.Remove(investor);
+    }
+
+    private void Notify(){
+        foreach (var investor in _inverstors){
+            investor.Update(this);
+        }
+    }
+}
+
+class Program {
+    static void Main(){
+        Stock apple = new Stock("AAPL",150);
+        Investor investor1 = new Investor("Ali");
+        Investor investor2 = new Investor("Ayşe");
+
+        apple.Attach(investor1);
+        apple.Attach(investor2);
+
+        apple.Price = 155;
+        apple.Price = 160;
+    }
+}
+
+```
+
+```less
+
+Merhaba Ali, AAPL fiyatı değişti: 155
+Merhaba Ayşe, AAPL fiyatı değişti: 155
+Merhaba Ali, AAPL fiyatı değişti: 160
+Merhaba Ayşe, AAPL fiyatı değişti: 160
+
+```
+
+**Stock** -> Subject, fiyat değişikliklerini gözlemcilere bildiriyor.
+**Investor** -> Observer, değişikilkleri alıyor ve tepki veriyor.
+Observer pattern, loosely coupled bir yapı sağlar; yani subject ve observer birbirine sıkı bağlı değildir.
+
+- Gevşek Bağlılık (loosely coupled): Subject, observer' ın detaylarını bilmez.
+- Dinamik İlişki: Çalışma zamanında observer eklenip çıkarılabilir.
+- Otomatik güncelleme: Değişiklik olduğunda herkes bilgilendirilir.
+
+**4️⃣ Gerçek dünya analojisi**
+Diyelim ki sen bir YouTube kanalına abonesin:
+* Kanal = Subject
+* Sen = Observer
+* Kanala video yüklendiğinde (state değiştiğinde) sen otomatik bildirim alırsın (Update çağırılır.)
+* Başka biri de abone olursa aynı şekilde o da bilgilendirilir.
+
+Kısaca Observer Pattern = **publish-subscribe** mekanizması.
+
+### Strategy Pattern
+
+Amaç: Bir algoritmayı veya davranışı çalışma zamanında değiştirmek, farklı yöntemleri aynı interface üzerinden uygulamak.
+
+Kullanım senaryosu:
+
+- Ödeme Yöntemleri (Kredi Kartı, PayPal, Havale)
+- Sıralama Algoritmaları (BubbleSort, QuickSort, MergeSort)
+- Filtreleme veya hesaplama seçenekleri
+
+> Özet: **Algoritmaları encapsulate edip, çalışma zamanında seçilebilir hale getirebiliriz.**
+
+```csharp
+
+//Stractegy
+public interface IPaymentStrategy {
+    void Pay(decimal amount);
+}
+
+//Concrete Strategy
+public class CreaditCardStrategy : IPaymentStrategy {
+    public void Pay(decimal amount){
+        Console.WriteLine($"{amount} TL Kredi Kartı ile ödendi.");
+    }
+}
+
+public class PayPalStrategy : IPaymentStrategy {
+    public void Pay(decimal amount){
+        Console.WriteLine($"{amount} TL PayPal ile ödendi.");
+    }
+}
+
+//Context
+public class ShoppingCart {
+    private IPaymentStrategy _paymentStrategy;
+
+    public void SetPaymentStrategy(IPaymentStrategy strategy){
+        _paymentStrategy = strategy;
+    }
+
+    public void Checkout(decimal amount){
+        _paymentStrategy.Pay(amount);
+    }
+}
+
+class Program{
+    static void Main(){
+        ShoppingCart cart = new ShoppingCart();
+
+        cart.SetPaymentStrategy(new CreditCardStrategy());
+        cart.Chekout(200); // 200 TL kredi kartı ile ödendi.
+
+        cart.SetPaymentStrategy(new PayPalStrategy());
+        cart.Checkout(150); // 150 TL PayPal ile ödendi.
+    }
+}
+
+```
+
+`IPaymentStrategy` -> Algoritmayı tanımlar (interface).
+`CreditCardPayment`, `PayPalPayment` -> Concrete strategy, algoritmanın farklı versiyonları.
+`ShoppingCart` -> Context, strategy'i çalışma zamanında seçer.
+
+**Avantaj:**
+* Yeni ödeme yöntemi eklemek kolaydır. (Yeni ConcreteStrategy ekle.)
+* Contect kodunu değiştirmeye gerek yok -> (**Open/ Closed Principle**' a uygun)
+
+---
+
+> Open/Closed Principle Nedir ? 
+
+**Yazılım var olan davranışları değiştirmeye gerek kalmadan yeni işlevler eklemeye açık, mevcut kod değişikliğine kapalı olmalıdır.**
+
+* Open (Açık): Yeni özellik eklemeye açık.
+* Closed (Kapalı): Mevcut kodu değiştirmeye kapalı.
+
+Amaç: Kodun yeniden kullanılabilirliğini artırmak ve hataları azaltmak.
+
+**Özet Mantık:**
+- Kod değiştirmeden genişletilebilir olmalı.
+- Yeni davranış eklemek mevcut kodu kırmadan yapılmalı.
+
+---
+
