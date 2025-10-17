@@ -1067,3 +1067,82 @@ class Program{
 **Avantaj:**
 * İşlemler nesne olarak saklanır -> queue, undo/redo veya logging kolay olur.
 * Invoker ve receiver loosely coupled.
+
+### Chain of Responsibilility Pattern
+
+Amaç: Bir isteği bir zincir boyunca iletip, isteği işleyebilecek uygun nesnenin işlemesini sağlamak.
+
+Kullanım senaryosu:
+
+- Hata/ Exception yönetimi
+- Event Handling
+- Yetki kontrolü/ Access Control
+
+> Özet: **İstekleri zincir boyunca iletir, hangi nesne uygun ise o işleme alır.**
+
+```csharp
+//Handler (abstract)
+
+public abstract class Handler {
+    protected Handler _next;
+    public void SetNext(Handler next){
+        _next = next;
+    }
+    public abstract void Handle(string request);
+}
+
+//Concreate Handlers
+public class AdminHandler : Handler {
+
+    public override void Handle(string request){
+        if(request == "Admin")
+            Console.WriteLine("Admin isteği işlendi!");
+        else if (_next != null)
+            _next.Handle(request);
+    }
+}
+
+public class UserHandler : Handler {
+
+    public override void Handle(string request){
+        if(request == "User")
+            Console.WriteLine("User isteği işlendi.");
+        else if (_next != null)
+            _next.Handle(request);
+    }
+}
+
+public class GuestHandler : Handler {
+
+    public override void Handle(string request){
+        if(request == "Guest")
+            Console.WriteLine("Guest isteği işlendi");
+        else
+            Console.WriteLine("İstek işlenemedi");
+    }
+}
+
+class Program {
+    static void Main(){
+        Handler admin = new AdminHandler();
+        Handler user = new UserHandler();
+        Handler guest = new GuestHandler();
+
+        admin.SetNext(user);
+        user.SetNext(guest);
+
+        admin.Handle("User"); // User isteği işlendi
+        admin.Handle("Guest"); // Guest isteği işlendi
+        admin.Handle("Super"); // İstek işlenemedi
+    }
+}
+
+```
+
+* `Handler` -> abstract sınıf, isteği işleyebilir veya bir sonraki handler' a iletir.
+* Concrete Handler' lar -> kendilerine uygun isteği işleyip, uygun değilse zincirdeki diğer handler' a iletir.
+
+**Avantaj:**
+* İstekler nesneler arası zincir boyunca akabilir. -> loosely coupled.
+* Zincire yeni handler eklemek kolaydır.
+
