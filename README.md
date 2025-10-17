@@ -979,3 +979,91 @@ Amaç: Kodun yeniden kullanılabilirliğini artırmak ve hataları azaltmak.
 
 ---
 
+### Command Pattern
+
+Amaç: bir işlemi nesne olarak kapsülleyip, çağrı ve yürütme zamanını ayırmak.
+
+Kullanım senaryosu:
+
+- Undo/Redo işlemleri (metin editörü)
+- Task scheduling/ job queue
+- GUI butonları ve event handling
+
+> Özet: **Komutları nesne olarak paketleriz ve onları istediğimiz zaman çağırabiliriz.**
+
+```csharp
+
+//Command Interface
+public interface ICommand{
+    void Execute();
+}
+
+//Receiver
+public class Light{
+    public void On(){
+        Console.WriteLine("Light opened!");
+    }
+
+    public void Off(){
+        Console.WriteLine("Light closed!");
+    }
+}
+
+//Concrete Commands
+public class LightOnCommand : ICommand {
+    private Light _light;
+    public LightCommand(Light light){
+        _light = light;
+    }
+    public void Execute(){
+        _light.On();
+    }
+}
+
+public class LightOffCommand : ICommand {
+    private Light _light;
+    public LightCommand(Light light){
+        _light = light;
+    }
+    public void Execute(){
+        _light.Off();
+    }
+}
+
+
+//Invoker
+public class RemoteControl{
+    private ICommand _command;
+    public void SetCommand(ICommand command){
+        _command = command;
+    }
+    public void PressButton(){
+        _command.Execute();
+    } 
+}
+
+class Program{
+    static void Main(){
+        Light livingRoomLight = new Light();
+        ICommand lightOn = new LightOnCommand(livingRoomLight);
+        ICommand lightOff = new LightOffCommand(livingRoomLight);
+
+        RemoteControl remote = new RemoteControl();
+
+        remote.SetCommand(lightOn);
+        remote.PressButton(); //Light opened!
+
+        remote.SetCommand(lightOff);
+        remote.PressButton(); //Light closed!
+    }
+}
+
+```
+
+`ICommand` -> Komutları tanımlar.
+`LightOnCommand`, `LightOffCommand` -> Concrete Command, receiver' ı çağırır.
+`RemoteControl` -> Invoker, komutları çalıştırır.
+
+**Avantaj:**
+* İşlemler nesne olarak saklanır -> queue, undo/redo veya logging kolay olur.
+* Invoker ve receiver loosely coupled.
