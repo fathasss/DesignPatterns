@@ -1213,7 +1213,7 @@ Yani Iterator Pattern C#' ta dilde gömülü olarak var (**foreach**,**yield ret
 
 ---
 
->  `yield` anahtar kelimesi nedir ?
+>  `yield return` anahtar kelimesi nedir ?
 
 C#' ta `yield return`, bir methodu "parça parça çalışan" bir yapıya çevirir.
 Normal bir method **return** deyince tamamen biter, ama **yield return** kulanan bir method:
