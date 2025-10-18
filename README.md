@@ -1377,3 +1377,353 @@ class Program{
 - Tüm iletişim tek merkezden yönetiliyor. -> `kontrol arttı`
 - Yeni kullanıcı eklemek çok kolay. -> `genişletilebilirlik iyi`
 
+### State Pattern
+
+**State Pattern**, bir nesnenin iç durumuna göre davranışını değiştirmesi gerektiğinde kullanılır.
+
+> Nesnenin davranışı, içinde bulunduğu moda (state) göre değişiyorsa, if/else kasmaktansa her modu ayrı bir sınıf olarak tanımlayıp nesnenin davranışını ona devrederiz.
+
+Kullanım senaryosu: 
+
+**Müzik Çalar (Play/Pause/Stop)
+- Player `Play` modundayken düğmeye basarsan -> `Pause` olur.
+- `Pause` modundayken basarsan `Play` olur.
+- `Stop` modundayken -> hiçbir şey yapmaz.
+
+Bu geçişler *State Pattern* ile çok güzel yönetilir.
+
+```csharp
+
+//State Interface
+public interface IPlayerState{
+    void PressPlay(PlayerContext context);
+}
+
+//Concrete States
+public class PlayingState : IPlayerState{
+    public void PressPlay(PlayerContext context){
+        Console.WriteLine("Şu an çalıyor -> Duraklatılıyor.");
+        context.SetState(new PausedState());
+    }
+}
+
+public class PausedState : IPlayerState{
+    public void PressPlay(PlayerContext context){
+        Console.WriteLine("Şuan duraklatılıyor -> Çalıyor.")
+        context.SetState(new PlayingState());
+    }
+}
+
+public class StoppedState : IPlayerState {
+    public void PressPlay(PlayerContext context){
+        Console.WriteLine("Durdurulmuş -> Çalmaya başlıyor.");
+        context.SetState(new PlayingState());
+    }
+}
+
+//Context
+public class PlayerContext {
+    private IPlayerState _state;
+
+    public PlayerContext(){
+        _state= new StoppedState();
+    }
+
+    public void SetState(IPlayerState newState){
+        _state = newState;
+    }
+
+    public void PressPlay(){
+        _state.PressPlay(this);
+    }
+}
+
+class Program{
+    static void Main(){
+        var player = new PlayerContext();
+        player.PressPlay(); //stopped -> playing
+        player.PressPlay(); //playing -> paused
+        player.PressPlay(); //paused -> playing
+    }
+}
+
+```
+
+**Avantaj:**
+
+| `Kötü yaklaşım` | `State Pattern Avantajı` |
+| --- | --- |
+| **if(state=="playing") ... else if ...** | Her state ayrı sınıfta -> **temiz kod** | 
+| Zor okunur, zor genişletilir | Yeni state eklemek çok kolay |
+| Davranışlar context içinde dağınık | Davranış state' lerde kapsüllenmiş |
+
+### Template Method
+
+Bu Behavioral Pattern' lerin arasında en kolaylardan, ama çok güçlü ve çok kullanılan bir tanesidir.
+
+**Template Method nedir?**
+
+Bir algoritmanın iskeletini (şablonunu) üst sınıfta tanımlarız; alt sınıflar sadece bazı adımları değiştirerek davranışı özelleştirir.
+
+**Kullanım senaryosu:** Çay demlemek ile kahve yapmak aslında aynı algoritmadır.
+
+- Suyu kaynat.
+- İçeriği ekle (çay/kahve)
+- Bardağa koy
+- Servis et
+
+Bu adımların hepsi aynıdır, tek değişkenlik "hangi içeriği ekleyeceksin" kısmındadır. İşte bu değişen kısmı alt sınıf **override** eder.
+
+```csharp
+
+//Abstract class - Template
+
+public abstract class BeverageMaker { //Template Method
+
+    public void MakeBeverage(){
+        BoilWater();
+        AddMainIngredient();
+        PourInCup();
+        Serve();
+    }
+
+    private void BoilWater(){
+        Console.WriteLine("Su kaynatılıyor...");
+    }
+
+    protected abstract void AddMainIngredient(); //Alt sınıflar belirler.
+
+    private void PourInCup(){
+        Console.WriteLine("Bardağa koyuluyor...");
+    }
+
+    private void Serve(){
+        Console.WriteLine("Servis edeiliyor...");
+    }
+}
+
+//Concrete Classes
+public class TeaMaker : IBeverageMaker {
+    protected override void AddMainIngredient(){
+        Console.WriteLine($"Çay ekleniyor...");
+    }
+}
+
+public class CoffeeMaker : IBeverageMaker {
+    protected override void AddMainIngredient(){
+        Console.WriteLine("Kahve ekleniyor...");
+    }
+}
+
+class Program {
+    static void Main(){
+        var tea = new TeaMaker();
+        tea.MakeBeverage();
+
+        var coffee = new CoffeeMaker();
+        coffee.MakeBeverage();
+    }
+}
+
+```
+
+| `Sonuç` | `Kazancı` |
+| --- | --- |
+| Kod tekrarını azaltır | Ortak şablon üst sınıfta | 
+| Alt sınıflar sadece değişen kısmı yazar | Kolay genişletilebilirlik |
+| Sabit Algoritma + esnek adımlar | Kontrollü özelleştirme | 
+
+---
+
+> **Soru:** Bu pattern' i çok sık kullanıyoruz aslında ben daha önce interface implementasyonu ile yapmıştım interface kullanarak da Template Method Pattern' ni kullanmış olurmuyuz yoksa abstract class zorunluluğu var mı ?
+
+> **Cevap:** Klasik tanımı itibariyle `Template Method Pattern` genelde *abstract class* üzerinden uygulanır. çünkü:
+
+- Ortak akışı (template method) üst sınıfta hzır olarak tanımlarsın,
+- Bazı adımları alt sınıflar override eder.
+
+Yani *override edilebilir kısımlar* için abstract veya virtual methodlara ihtiyaç vardır -> Bu da **class mirası gerektirir.**, yani interface tek başına yetmez.
+
+✅ **Ama Interface ile de benzer mantık yapılabilir mi?**
+
+Evet yapılabilir ama ismi **Template Method Pattern** olmaz.
+
+Eğer sen şöyle yaptıysan:
+
+- `IAlgorithmStep` gibi bir interface tanımladın.
+- Tüm adımlar interface içinde abstract gibi verildi
+- Her sınıfta methodları kendin çağırıp manuel template oluşturdun.
+
+Bu durumda aslında **Strategy** veya **Polymorphism** kullanmış olursun, ama *tam olarak Template Method Pattern değil*.
+
+**Özetle:**
+
+| `Kullanım Şekli` | `Hangi Pattern?` |
+| --- | --- | 
+| Ortak akış `base class` içinde, sadece bazı adımlar override ediliyorsa | Template Method | 
+| Sadece interface implementasyonu ile farklı algoritmalar seçiliyorsa | Strategy Pattern ve Polimorfizm, *Template Method sayılmaz* |
+| Hem interface hem base class karışık kullanıyorsan | Hibrit yaklaşım, ama temel prensip yine inheritance tabanlı olmalı |
+
+* Template Method = Inheritance tabanlı olmalı (abstract class ile daha net uygulanır.)
+* Interface ile benzetmesini yapabilirsin ama o zaman Template Method değil Strategy veya başka bir pattern' e kaymış olursun.
+
+---
+
+### Visitor Pattern
+
+Amaç: bir nesne yapısına dışarıdan yeni bir operasyon eklemek, ama nesnelerin kendilerini değiştirmeden yapmak.
+
+- Nesneye yeni method eklemek istiyorsun ama mevcut sınıfları değiştirmek istemiyorsun -> Visitor kullan.
+- Open/Closed Principle' a uyan bir pattern
+
+Kullanım senaryosu:
+
+- Shopping Cart -> Ürünlere farklı işlemler (vergi hesapla,indirim uygula,ağırlık hesapla) uygulamak istiyoruz.
+- Ürün sınıflarını değiştirmeden farklı operasyonlar ekleyebiliriz.
+
+```csharp
+//Visitor interface
+public interface IVisitor{
+    void Visit(Book book);
+    void Visit(Fruit fruit);
+}
+
+//Element interface
+public interface IProduct{
+    void Accept(IVisitor visitor);
+}
+
+//Conrete Elements
+public class Book : IProduct {
+    public double Price { get; set; }
+    public void Accept(IVisitor visitor){
+        visitor.Visit(this);
+    }
+}
+
+public class Fruit : IProduct {
+    public double Price { get; set;}
+    public double Weight { get; set; }
+    public void Accept(IVisitor visitor){
+        visitor.Visit(this);
+    }
+}
+
+//Concrete Visitor
+public class ShoppingCartVisitor : IVisitor {
+    public void Visit(Book book){
+        Console.WriteLine($"Book price with tax : {book.Price * 1.1}");
+    }
+
+    public void Visit(Fruit fruit){
+        Console.WriteLine($"Fruit price : {fruit.Price * fruit.Weight}");
+    }
+}
+
+class Program{
+    static void Main(){
+        IProduct[] products = {
+            new Book { Price = 20 },
+            new Fruit { Price = 5, Weight = 5}
+        };
+
+        IVisitor visitor = new ShoppingCartVisitor();
+
+        foreach(var product in products){
+            product.Accept(visitor);
+        }
+    }
+}
+
+```
+
+```less
+Book price with tax: 22
+Fruit price: 10
+```
+**Avantaj:**
+
+- Nesnelerin kendi kodlarını değiştirmeden yeni işlemler ekleyebilirsin.
+- Open/Closed Principle' uyar.
+- Farklı operasyonlar için ayrı visitor sınıfları oluşturabilirsin.
+
+### Memento Pattern
+
+Amaç: Bir nesnenin iç durumunu kaydedip, daha sonra bu duruma geri dönmeyi **(undo)** sağlayan pattern.
+
+- Nesnelerin state' i dışarıdan değiştirilemez, sadece snapshot alınır.
+- Özeliikle **undo/redo** versiyon kontrolü, game checkpoint gibi senaryolarda kullanılır.
+
+**Roller**
+
+| `Rol` | `Açıklama` |
+| --- | --- |
+| Originator | Durumu olan nesne, state' i kayıt eder ve geri yükler. | 
+| Memento | Originator' ın state' inin snapshot'ı, genelde immutable. |
+| Caretaker | Memento' yu saklayan ve gerektiğinde geri getiren sınıf. |
+
+```csharp
+
+//Memento
+public class EditorMemento {
+    public string Content { get; }
+    public EditorMemento(string content) {
+        Content = content;
+    }
+}
+
+//Originator
+public class Editor {
+    public string Content { get; set;}
+    public EditorMemento Save() {
+        new EditorMemento(Content);
+    }
+    
+    public void Restore(EditorMemento memento) {
+        Content = memento.Content;
+    }
+}
+
+//Caretaker
+public class History{
+    private Stack<EditorMemento> _states = new Stack<EditorMemento>();
+
+    public void Push(EditorMemento memento){
+        _states.Push(memento);
+    }
+
+    public EditorMemento Pop(){
+        _states.Pop();
+    }
+}
+
+class Program {
+    static void  Main(){
+        var editor = new Editor();
+        var history = new History();
+
+        editor.Content = "Merhaba!";
+        history.Push(editor.Save());
+
+        editor.Content = "Merhaba Dünya";
+        history.Push(editor.Save());
+
+        editor.Content = "Merhaba Dünya! Bugün Harika";
+
+        //Geri al
+        editor.Restore(history.Pop());
+        Console.WriteLine(editor.Content); //Merhaba Dünya
+
+        editor.Restore(history.Pop())
+        Console.WriteLine(editor.Content); //Merhaba!
+    }
+}
+
+```
+
+**Avantaj:**
+
+- Nesnelerin state' ini güvenli bir şekilde saklar.
+- Undo/redo işlemleri kolaylaşır.
+- Originator'ın iç durumu dışarıdan değiştirilemez, encapsulation korunur.
+
