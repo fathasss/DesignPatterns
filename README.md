@@ -1285,3 +1285,95 @@ Bellek dostudur, performanslıdır, **foreach** ile otomatik uyumludur.
 ---
 
 ### Mediator Pattern
+
+Mediator (**Arabulucu**) Pattern, nesneler arası karmaşık iletişimleri *tek bir merkezden yönetmek* için kullanılır.
+Normalde nesneler birbiriyle direkt konuşursa, sistemde aşırı bağımlılık (**tight coupling**) oluşur. Bu da bakımı zorlaştırır.
+
+Amaç: Nesneler birbirleriyle direkt konuşmak yerine, tüm iletişimi bir merkezi arabulucu (**Mediator**) üzerinden gerçekleşsin.
+
+Kullanım senaryosu:
+
+- Uçaklar (Mesajlaşan nesneler)
+- Hava trafik Kontrol Kulesi (Mediator)
+
+Uçaklar birbirine "Benimle çarpışma alçalacağım, yükseleyeceğim" diye bağırmaz.
+Hepsi kuleyle konuşur, kule karar verir.
+
+**Yapısı:**
+
+| `Rol` | `Açıklama` | 
+| --- | --- |
+| Mediator Interface | Arabulucu kontratı |
+| ConcreteMediator | İletişimi yöneten merkez |
+| Colleague Classes | Haberleşmek isteyen nesneler | 
+
+```csharp
+
+//Mediator Interface
+public interface IChatMediator {
+    void SendMessage(string message, IUser sender);
+}
+
+//Concrete Mediator
+public class ChatMediator : IChatMediator {
+    private List<IUser> users = new();
+    public void RegisterUser(IUser user){
+        users.Add(user);
+    }
+
+    public void SendMessage(string message, IUser sender){
+        foreach(var user in users){
+            if(user != sender)
+                user.Receive(message);
+        }
+    }
+}
+
+//Colleague Interface
+public interface IUser{
+    void Send(string message);
+    void Receive(string message);
+}
+
+//Concrete Colleague
+public class ChatUser : IUser {
+    private readonly string _name;
+    private readonly IChatMediator _mediator;
+
+    public ChatUser(string naame, IChatMediator mediator){
+        _name = name;
+        _mediator = mediator;
+    }
+
+    public void Send(string message){
+        Console.WriteLine($"{name} mesaj gönderdi: {message}");
+        _mediator.SendMessage(message,this);
+    }
+
+    public void Receive(string message){
+        Console.WriteLine($"{name} mesaj aldı : {message}");
+    }
+}
+
+class Program{
+    static void Main(){
+        var chat = new ChatMediator();
+
+        var user1 = new ChatUser("Fatih",chat);
+        var user2 = new ChatUser("Buse", chat);
+        var user3 = new ChatUser("Ela", chat);
+
+        chat.RegisterUser(user1);
+        chat.RegisterUser(user2);
+        chat.RegisterUser(user3);
+
+        user1.Send("Merhaba Dünya!");
+    }
+}
+
+```
+
+- Nesneler birbiriyle direkt konuşmuyor -> `bağımlılık azaldı`
+- Tüm iletişim tek merkezden yönetiliyor. -> `kontrol arttı`
+- Yeni kullanıcı eklemek çok kolay. -> `genişletilebilirlik iyi`
+
