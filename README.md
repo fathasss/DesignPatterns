@@ -1146,3 +1146,142 @@ class Program {
 * İstekler nesneler arası zincir boyunca akabilir. -> loosely coupled.
 * Zincire yeni handler eklemek kolaydır.
 
+### Iterator Pattern
+
+Amaç: Bir koleksiyonun elemanlarını iç yapısını bilmeden sırayla dolaşmayı sağlar.
+
+Kullanım senaryosu:
+
+- List, Arrayi Dictionary gibi koleksiyonların kendi özel dolaşım kuralları varsa
+- Özel veri yapıları üzerinde gezinmek istiyorsan ama foreach kullanamıyorsan-
+- "Koleksiyonun içinde ne var bilmeden her birine erişeyim" diyorsan
+
+> Kısaca: **Traversal (dolaşma)** işini koleksiyondan ayırıyoruz.
+
+```csharp
+
+public class Book {
+    public string Title { get;}
+    public Book(string title) {
+        Title = title;
+    }    
+}
+
+public class Library : IEnumerable {
+    private Book[] _books;
+    public Library(Book[] books) {
+        _books = books;
+    }
+
+    public IEnumerator GetEnumerator(){
+        foreach(var book in _books)
+            yield return book;
+    }
+}
+
+class Program{
+    static void Main(){
+        Book[] books = {
+            new Book("Design Patterns"),
+            new Book("Clean Code"),
+            new Book("C# in Depth")
+        };
+
+        Library library = new Library(book);
+
+        foreach(Book book in library){
+            Console.WriteLine(book.Title);
+        }
+    }
+}
+
+```
+
+```less
+Design Patterns
+Clean Code
+C# in Depth
+```
+
+| `Rol` | `Açıklama` |
+| --- | --- |
+| IEnumerable | Koleksiyonun dolaşılabilir olduğunu belirtir. |
+| IEnumerator | Her seferinde bir döndüren mekanizmadır. |
+| `yield return` | C#' ta iterator yazmayı kolaylaştıran sihirli kelime |
+
+Yani Iterator Pattern C#' ta dilde gömülü olarak var (**foreach**,**yield return**,**IEnumerable**) ama biz istersek kendi koleksiyonlarımız için Iterator kuralları yazabiliyoruz.
+
+---
+
+>  `yield` anahtar kelimesi nedir ?
+
+C#' ta `yield return`, bir methodu "parça parça çalışan" bir yapıya çevirir.
+Normal bir method **return** deyince tamamen biter, ama **yield return** kulanan bir method:
+
+- Her çağrıldığında kaldığı yerden devam eder.
+- Her seferinde bir değer döndürür.
+- Bellekte gereksiz liste oluşturmaz. (lazy execution)
+
+| `Özellik` | **`return`** | **`yield return`** |
+| --- | --- | --- |
+| Birden fazla değer döndürebilir mi ? | **Hayır**, sadece bir kere | **Evet**, her seferinde birer birer |
+| Method çalışmaya devam eder mi ? | Return' den sonra tamamen biter | Kaldığı yerden devam eder. |
+| Lazy(tembel) çalışır mı ? | **Hayır** | **Evet** | 
+| **foreach** ile uyumlu mu ?| **Hayır** | **Evet** |
+
+```csharp
+//basic example
+IEnumerable<int> GetNumbers(){
+    yield return 1;
+    yield return 2;
+    yield return 3;
+}
+
+foreach(var number in GetNumbers())
+    Console.WriteLine(number);
+```
+
+```less
+1
+2
+3
+```
+**Bu method aslında arka planda kendi kendine bir Iterator(IEnumerator) oluşturuyor. Her `yield return` dediğinde, sıradaki değeri döndürüp duraklıyor. Bir sonraki çağrıda kaldığı yerden devam ediyor.**
+
+#### Gerçek Hayat Örnek:
+
+Eğer 10 milyon elemanlı bir listeyi döndüren method yazsaydın:
+
+```csharp
+
+List<int> GetBigList(){
+    var list = new List<int>();
+
+   for(int i = 0; i<10000000; i++){
+        list.Add(i);
+   }
+   return list;
+}
+```
+Bu tüm listeyi RAM' e yükler -> belleği şişirir.
+
+Ancak:
+
+```csharp
+
+IEnumerable<int> GetBigEnumerable(){
+    for(int i = 0; i<10000000; i++){
+        yield return i;
+    }
+}
+
+```
+Bu ise her seferinde tek sayı döndürür, Hafızayı şişirmez. -> **Lazy Loading**
+
+`yield return`, bir methodu Iterator haline dönüştürür.
+Listeyi komple oluşturmak yerine, değerleri tek tek üretir.
+Bellek dostudur, performanslıdır, **foreach** ile otomatik uyumludur.
+
+---
+
+### Mediator Pattern
